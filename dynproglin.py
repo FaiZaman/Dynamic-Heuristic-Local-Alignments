@@ -40,7 +40,8 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
 
         seq1_alignment = alignment1[0] + alignment2[0]
         seq2_alignment = alignment1[1] + alignment2[1]
-    return (seq1_alignment, seq2_alignment)
+
+    return [seq1_alignment, seq2_alignment]
 
 
 def NWScore(alphabet, substitution_matrix, seq1, seq2):
@@ -86,7 +87,7 @@ def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
             scoring_matrix[row][column] = score[0]
             backtracking_matrix[row][column] = score[1]
 
-    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix)
+    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix, seq1, seq2)
     return alignments
 
 
@@ -115,11 +116,11 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1,
     return (score, score_origin)
     
 
-def backtrack(row, column, backtracking_matrix):
+def backtrack(row, column, backtracking_matrix, seq1, seq2):
     seq1_alignment = ""
     seq2_alignment = ""
 
-    while row != 0 and column != 0:
+    while row != 0 or column != 0:
         score_origin = backtracking_matrix[row][column]
         if score_origin == 8:
             seq1_alignment += seq1[column - 1]
@@ -139,13 +140,26 @@ def backtrack(row, column, backtracking_matrix):
     seq2_alignment = seq2_alignment[::-1]
     return (seq1_alignment, seq2_alignment)
 
+def displayAlignment(alignment):
+    string1 = alignment[0]
+    string2 = alignment[1]
+    string3 = ''
+    for i in range(min(len(string1), len(string2))):
+        if string1[i] == string2[i]:
+            string3 = string3 + "|"
+        else:
+            string3 = string3 + " "
+    print('String1: ' + string1)
+    print('         ' + string3)
+    print('String2: ' + string2 + '\n\n')
 
 alphabet = "AGCT"
 substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1, -2], [-1, -1, -1, 2, -2], [-1, -1, -1, -1, -2]]
 #substitution_matrix = [[1,-1,-2,-1],[-1,2,-4,-1],[-2,-4,3,-2],[-1,-1,-2,0]]
 #substitution_matrix = [[1, -1, -1, -1, 0], [-1, 1, -1, -1, 0], [-1, -1, 1, -1, 0], [-1, -1, -1, 1, 0], [-1, -1, -1, -1, 0]]
-seq1 = "AGTACGCA"
-seq2 = "TATGC"
+seq1 = "TATGC"
+seq2 = "AGTACGCA"
 
-print(dynproglin(alphabet, substitution_matrix, "TATGC", "AGTACGCA"))
+alignments = dynproglin(alphabet, substitution_matrix, seq1, seq2)
+displayAlignment(alignments)
 #NWScore(alphabet, substitution_matrix, "TATGC", "AGTA")
