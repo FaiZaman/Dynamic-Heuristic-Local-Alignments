@@ -87,22 +87,30 @@ def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
             scoring_matrix[row][column] = score[0]
             backtracking_matrix[row][column] = score[1]
 
+    print(scoring_matrix)
     alignments = backtrack(len(seq2), len(seq1), backtracking_matrix, seq1, seq2)
     return alignments
 
 
 def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2):
 
+    print(seq1, seq2)
     # calculate and return the best score and its origin for the current scoring matrix cell
     seq1letter = seq1[column - 1]
     seq2letter = seq2[row - 1]
 
     match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
 
-    diagonal_score = scoring_matrix[0][column - 1] + match_score
-    left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
-    up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
-    
+    if len(seq1) > 1 and len(seq2) > 1:
+        diagonal_score = scoring_matrix[0][column - 1] + match_score
+        left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
+        up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
+    else:
+        diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
+        left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
+        up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
+
+    print(diagonal_score, left_score, up_score)
     score = max(diagonal_score, up_score, left_score)
 
     # 8 = DIAGONAL, 2 = UP, 4 = LEFT
@@ -114,7 +122,7 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1,
         score_origin = 4
 
     return (score, score_origin)
-    
+  
 
 def backtrack(row, column, backtracking_matrix, seq1, seq2):
     seq1_alignment = ""
@@ -138,6 +146,7 @@ def backtrack(row, column, backtracking_matrix, seq1, seq2):
 
     seq1_alignment = seq1_alignment[::-1]
     seq2_alignment = seq2_alignment[::-1]
+    print(backtracking_matrix)
     return (seq1_alignment, seq2_alignment)
 
 def displayAlignment(alignment):

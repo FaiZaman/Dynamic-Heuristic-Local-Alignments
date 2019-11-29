@@ -1,0 +1,10 @@
+DYNPROGLIN
+
+1) Debug global alignment error by printing corner backtracking matrix scores
+2) Convert Hirschberg to local alignment
+	- Change negative first row and column to all zeros
+	- Add zero in as possibility when taking max of scores
+	- When a score is found, store the position of the score in the backtracking matrix
+	- For each leading character position from that score, store pointer to position of start point
+
+IT DOESN'T WORK BECAUSE OF HOW I DID NEEDLEMAN WUNCSH CALCULATING SCORE DATA
