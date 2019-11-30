@@ -11,6 +11,8 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
     seq1_alignment = ""
     seq2_alignment = ""
 
+    max_score_data = [0, 0, 0]
+
     if seq1_len == 0:
         for i in range(0, seq2_len):
             seq1_alignment = seq1_alignment + '-'
@@ -25,12 +27,12 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
         seq2_alignment = needlemen_alignments[1]
     else:
         seq2_mid = int(seq2_len/2)
-        scoreL = NWScore(alphabet, substitution_matrix, seq1, seq2[0:seq2_mid])
+        scoreL = NWScore(alphabet, substitution_matrix, seq1, seq2[0:seq2_mid], max_score_data)
         seq2_rev = seq2[seq2_mid:len(seq2)]
         seq2_rev = seq2_rev[::-1]
         seq1_rev = seq1[::-1]
 
-        scoreR = NWScore(alphabet, substitution_matrix, seq1_rev, seq2_rev)
+        scoreR = NWScore(alphabet, substitution_matrix, seq1_rev, seq2_rev, max_score_data)
         scoreR = np.flip(scoreR)
         scoreSum = np.add(scoreL, scoreR)
         seq1_mid = np.argmax(scoreSum)
@@ -41,14 +43,11 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
         seq1_alignment = alignment1[0] + alignment2[0]
         seq2_alignment = alignment1[1] + alignment2[1]
 
-    return [seq1_alignment, seq2_alignment]
+    return [seq1_alignment, seq2_alignment, max_score_data]
 
 
-def NWScore(alphabet, substitution_matrix, seq1, seq2):
+def NWScore(alphabet, substitution_matrix, seq1, seq2, max_score_data):
 
-    max_score = 0
-    max_score_row = 0
-    max_score_column = 0
     p = len(alphabet)
     scoring_matrix = np.zeros((2, len(seq1) + 1))
     
@@ -56,14 +55,13 @@ def NWScore(alphabet, substitution_matrix, seq1, seq2):
         for column in range(1, len(seq1) + 1):
             score = calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2)
             scoring_matrix[1][column] = score[0]
-            if score[0] > max_score:
-                max_score = score[0]
-                max_score_row = row
-                max_score_column = column
+            if score[0] > max_score_data[0]:
+                max_score_data[0] = score[0]
+                max_score_data[1] = row
+                max_score_data[2] = column
         scoring_matrix[0,:] = scoring_matrix[1,:]
 
     last_line = scoring_matrix[1]
-    print(max_score, max_score_row, max_score_column)
     return last_line
     
 
@@ -161,3 +159,20 @@ seq2 = "AGTACGCA"
 
 alignments = dynproglin(alphabet, substitution_matrix, seq1, seq2)
 displayAlignment(alignments)
+
+max_score_row = alignments[2][1]
+max_score_column = alignments[2][2]
+seq1_end_index = max_score_column - 1
+seq2_end_index = max_score_row - 1
+
+print(seq1_end_index, seq2_end_index)
+seq1_rev = seq1[::-1]
+seq2_rev = seq2[::-1]
+seq1_sliced = seq1_rev[0:seq1_end_index]
+seq2_sliced = seq2_rev[0:seq2_end_index]
+
+new_alignments = dynproglin(alphabet, substitution_matrix, seq1_sliced, seq2_sliced)
+displayAlignment(new_alignments)
+start_score_row = alignments[2][1]
+start_score_column = alignments[2][2]
+print(start_score_row - 1, start_score_column - 1)
