@@ -46,17 +46,24 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
 
 def NWScore(alphabet, substitution_matrix, seq1, seq2):
 
+    max_score = 0
+    max_score_row = 0
+    max_score_column = 0
     p = len(alphabet)
     scoring_matrix = np.zeros((2, len(seq1) + 1))
     
     for row in range(1, len(seq2) + 1):
-        letter = seq2[row - 1]
         for column in range(1, len(seq1) + 1):
             score = calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2)
             scoring_matrix[1][column] = score[0]
+            if score[0] > max_score:
+                max_score = score[0]
+                max_score_row = row
+                max_score_column = column
         scoring_matrix[0,:] = scoring_matrix[1,:]
 
     last_line = scoring_matrix[1]
+    print(max_score, max_score_row, max_score_column)
     return last_line
     
 
