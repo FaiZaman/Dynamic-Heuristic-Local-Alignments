@@ -38,8 +38,8 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix):
     match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
 
     diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
-    left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
-    up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
+    left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
+    up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
     
     score = max(diagonal_score, up_score, left_score, 0)
     score_origin = 0
@@ -60,11 +60,10 @@ def get_indices(backtracking_matrix, row, column):
     seq2_indices = []
     seq1_alignment = ""
     seq2_alignment = ""
-    print(row, column)
 
     # iterate through backtracking matrix starting with cell which has the max score
     # iterate while collecting indices for the best alignment for both sequences
-    while row > 1 and column > 1:
+    while row > 0 and column > 0:
         score_origin = backtracking_matrix[row][column]
 
         if score_origin == 8:
@@ -82,7 +81,6 @@ def get_indices(backtracking_matrix, row, column):
             seq1_alignment += seq1[column - 1]
             seq2_alignment += '-'
             column = column - 1
-        print(row, column)
     
     seq1_indices.sort()
     seq2_indices.sort()
@@ -106,10 +104,21 @@ def displayAlignment(alignment):
     print('String2: ' + string2 + '\n\n')
 
 
-alphabet = "ABC"
-substitution_matrix = [[1,-1,-2,-1],[-1,2,-4,-1],[-2,-4,3,-2],[-1,-1,-2,0]]
-seq1 = "AABBAACA"
-seq2 = "CBACCCBA"
+alphabet = "ABCD"
+substitution_matrix = [
+
+[ 1,-5,-5,-5,-1],
+
+[-5, 1,-5,-5,-1],
+
+[-5,-5, 5,-5,-4],
+
+[-5,-5,-5, 6,-4],
+
+[-1,-1,-4,-4,-9]]
+
+seq1 = "AAAAACCDDCCDDAAAAACC"
+seq2 = "CCAAADDAAAACCAAADDCCAAAA"
 
 a = dynprog(alphabet, substitution_matrix, seq1, seq2)
 print("Score:   ", a[0])
