@@ -1,6 +1,34 @@
 import numpy as np
 
 def dynproglin(alphabet, substitution_matrix, seq1, seq2):
+    
+    # get score and end indices of local alignment
+    alignments = NWLocalScore(alphabet, substitution_matrix, seq1, seq2)
+    score = alignments[0]
+    seq1_end_index = alignments[2]
+    seq2_end_index = alignments[1]
+
+    # reverse sequences and run again
+    seq1_rev = seq1[::-1]
+    seq2_rev = seq2[::-1]
+    new_alignments = NWLocalScore(alphabet, substitution_matrix, seq1_rev, seq2_rev)
+
+    # get start indices and build local sequences
+    seq1_start_index = len(seq1) - new_alignments[2]
+    seq2_start_index = len(seq2) - new_alignments[1]
+    seq1_local = seq1[seq1_start_index:seq1_end_index]
+    seq2_local = seq2[seq2_start_index:seq2_end_index]
+
+    # run Hirschberg global alignment on local sequences
+    a = Hirschberg(alphabet, substitution_matrix, seq1_local, seq2_local)
+    seq1_alignment = a[0]
+    seq2_alignment = a[1]
+
+    (seq1_indices, seq2_indices) = get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_index)
+    return int(score), seq1_indices, seq2_indices
+
+
+def Hirschberg(alphabet, substitution_matrix, seq1, seq2):
 
     # gathering values
     p = len(alphabet)
@@ -35,12 +63,13 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
         scoreSum = np.add(scoreL, scoreR)
         seq1_mid = np.argmax(scoreSum)
 
-        alignment1 = dynproglin(alphabet, substitution_matrix, seq1[0:seq1_mid], seq2[0:seq2_mid])
-        alignment2 = dynproglin(alphabet, substitution_matrix, seq1[seq1_mid:len(seq1)], seq2[seq2_mid:len(seq2)])
+        alignment1 = Hirschberg(alphabet, substitution_matrix, seq1[0:seq1_mid], seq2[0:seq2_mid])
+        alignment2 = Hirschberg(alphabet, substitution_matrix, seq1[seq1_mid:len(seq1)], seq2[seq2_mid:len(seq2)])
 
         seq1_alignment = alignment1[0] + alignment2[0]
         seq2_alignment = alignment1[1] + alignment2[1]
-    return (seq1_alignment, seq2_alignment)
+
+    return [seq1_alignment, seq2_alignment]
 
 
 def NWScore(alphabet, substitution_matrix, seq1, seq2):
@@ -62,7 +91,55 @@ def NWScore(alphabet, substitution_matrix, seq1, seq2):
 
     last_line = scoring_matrix[1]
     return last_line
+
+
+def NWLocalScore(alphabet, substitution_matrix, seq1, seq2):
+
+    scoring_matrix = np.zeros((2, len(seq1) + 1))
+    max_score_data = [0, 0, 0]  # max score, row, and column
     
+    for row in range(1, len(seq2) + 1):
+        for column in range(1, len(seq1) + 1):
+            score = calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2)
+            scoring_matrix[1][column] = score[0]
+            if score[0] > max_score_data[0]:
+                max_score_data[0] = score[0]
+                max_score_data[1] = row
+                max_score_data[2] = column
+        scoring_matrix[0,:] = scoring_matrix[1,:]
+
+    return max_score_data
+
+
+def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2):
+
+    # calculate and return the best score and its origin for the current scoring matrix cell
+    seq1letter = seq1[column - 1]
+    seq2letter = seq2[row - 1]
+
+    match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
+
+    if (len(seq1) > 1 and len(seq2) > 1):
+        diagonal_score = scoring_matrix[0][column - 1] + match_score
+        left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
+    else:
+        diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
+        left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
+
+    score = max(diagonal_score, up_score, left_score)
+
+    # 8 = DIAGONAL, 2 = UP, 4 = LEFT
+    if score == diagonal_score:
+        score_origin = 8
+    elif score == up_score:
+        score_origin = 2
+    else:
+        score_origin = 4
+
+    return (score, score_origin)
+  
 
 def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
 
@@ -86,40 +163,15 @@ def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
             scoring_matrix[row][column] = score[0]
             backtracking_matrix[row][column] = score[1]
 
-    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix)
+    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix, seq1, seq2)
     return alignments
 
 
-def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2):
-
-    # calculate and return the best score and its origin for the current scoring matrix cell
-    seq1letter = seq1[column - 1]
-    seq2letter = seq2[row - 1]
-
-    match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
-
-    diagonal_score = scoring_matrix[0][column - 1] + match_score
-    left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
-    up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
-    
-    score = max(diagonal_score, up_score, left_score)
-
-    # 8 = DIAGONAL, 2 = UP, 4 = LEFT
-    if score == diagonal_score:
-        score_origin = 8
-    elif score == up_score:
-        score_origin = 2
-    else:
-        score_origin = 4
-
-    return (score, score_origin)
-    
-
-def backtrack(row, column, backtracking_matrix):
+def backtrack(row, column, backtracking_matrix, seq1, seq2):
     seq1_alignment = ""
     seq2_alignment = ""
 
-    while row != 0 and column != 0:
+    while row != 0 or column != 0:
         score_origin = backtracking_matrix[row][column]
         if score_origin == 8:
             seq1_alignment += seq1[column - 1]
@@ -139,13 +191,53 @@ def backtrack(row, column, backtracking_matrix):
     seq2_alignment = seq2_alignment[::-1]
     return (seq1_alignment, seq2_alignment)
 
+def get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_index):
+    
+    seq1_indices = []
+    seq2_indices = []
+    seq1_gaps = 0
+    seq2_gaps = 0
 
-alphabet = "AGCT"
-substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1, -2], [-1, -1, -1, 2, -2], [-1, -1, -1, -1, -2]]
-#substitution_matrix = [[1,-1,-2,-1],[-1,2,-4,-1],[-2,-4,3,-2],[-1,-1,-2,0]]
-#substitution_matrix = [[1, -1, -1, -1, 0], [-1, 1, -1, -1, 0], [-1, -1, 1, -1, 0], [-1, -1, -1, 1, 0], [-1, -1, -1, -1, 0]]
-seq1 = "AGTACGCA"
-seq2 = "TATGC"
+    for letter in range(0, len(seq1_alignment)):
+        if seq1_alignment[letter] == "-":
+            seq1_gaps += 1
+        elif seq2_alignment[letter] == "-":
+            seq2_gaps += 1
+        else:
+            seq1_indices.append(letter + seq1_start_index - seq1_gaps)
+            seq2_indices.append(letter + seq2_start_index - seq2_gaps)
 
-print(dynproglin(alphabet, substitution_matrix, "TATGC", "AGTACGCA"))
-#NWScore(alphabet, substitution_matrix, "TATGC", "AGTA")
+    return (seq1_indices, seq2_indices)
+
+def displayAlignment(alignment):
+    string1 = alignment[0]
+    string2 = alignment[1]
+    string3 = ''
+    for i in range(min(len(string1), len(string2))):
+        if string1[i] == string2[i]:
+            string3 = string3 + "|"
+        else:
+            string3 = string3 + " "
+    print('String1: ' + string1)
+    print('         ' + string3)
+    print('String2: ' + string2 + '\n\n')
+
+alphabet = "ABCD"
+substitution_matrix = [
+
+[ 1,-5,-5,-5,-1],
+
+[-5, 1,-5,-5,-1],
+
+[-5,-5, 5,-5,-4],
+
+[-5,-5,-5, 6,-4],
+
+[-1,-1,-4,-4,-9]]
+
+seq1 = "AAAAACCDDCCDDAAAAACC"
+seq2 = "CCAAADDAAAACCAAADDCCAAAA"
+
+alignments = dynproglin(alphabet, substitution_matrix, seq1, seq2)
+print("Score:   ", alignments[0])
+print("Indices: ", alignments[1], alignments[2])

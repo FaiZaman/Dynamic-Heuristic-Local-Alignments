@@ -1,0 +1,9 @@
+DYNPROGLIN
+
+Convert Hirschberg to local alignment
+	- Change negative first row and column to all zeros
+	- Add zero in as possibility when taking max of scores
+	- When a score is found, store the position of the score in the backtracking matrix
+	- For each leading character position from that score, store pointer to position of start point
+
+Once the end point is found, seq1[max_score_col - 1] is the end point letter of seq1 and seq2[max_score_row - 1] for seq2
