@@ -48,7 +48,6 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
 
 def NWScore(alphabet, substitution_matrix, seq1, seq2, max_score_data):
 
-    p = len(alphabet)
     scoring_matrix = np.zeros((2, len(seq1) + 1))
     
     for row in range(1, len(seq2) + 1):
@@ -62,23 +61,7 @@ def NWScore(alphabet, substitution_matrix, seq1, seq2, max_score_data):
         scoring_matrix[0,:] = scoring_matrix[1,:]
 
     last_line = scoring_matrix[1]
-    return last_line
-    
-
-def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
-
-    p = len(alphabet)
-    scoring_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
-    backtracking_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
-
-    for row in range(1, len(seq2) + 1):
-        for column in range(1, len(seq1) + 1):
-            score = calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2)
-            scoring_matrix[row][column] = score[0]
-            backtracking_matrix[row][column] = score[1]
-
-    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix, seq1, seq2)
-    return alignments
+    return max_score_data
 
 
 def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2):
@@ -89,14 +72,14 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1,
 
     match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
 
-    if len(seq1) > 1 and len(seq2) > 1:
+    if (len(seq1) > 1 and len(seq2) > 1):
         diagonal_score = scoring_matrix[0][column - 1] + match_score
-        left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
-        up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        left_score = scoring_matrix[1][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        up_score = scoring_matrix[0][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
     else:
         diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
-        left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq2letter)][-1]
-        up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
+        up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
 
     score = max(diagonal_score, up_score, left_score, 0)
 
@@ -110,12 +93,26 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1,
 
     return (score, score_origin)
   
+def needleman_wunsch(alphabet, substitution_matrix, seq1, seq2):
+
+    scoring_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
+    backtracking_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
+
+    for row in range(1, len(seq2) + 1):
+        for column in range(1, len(seq1) + 1):
+            score = calculate_score_data(row, column, substitution_matrix, scoring_matrix, seq1, seq2)
+            scoring_matrix[row][column] = score[0]
+            backtracking_matrix[row][column] = score[1]
+
+    alignments = backtrack(len(seq2), len(seq1), backtracking_matrix, seq1, seq2)
+    return alignments
+
 
 def backtrack(row, column, backtracking_matrix, seq1, seq2):
     seq1_alignment = ""
     seq2_alignment = ""
 
-    while row != 0 or column != 0:
+    while row > 1 and column > 1:
         score_origin = backtracking_matrix[row][column]
         if score_origin == 8:
             seq1_alignment += seq1[column - 1]
@@ -157,22 +154,21 @@ substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1,
 seq1 = "TATGC"
 seq2 = "AGTACGCA"
 
-alignments = dynproglin(alphabet, substitution_matrix, seq1, seq2)
-displayAlignment(alignments)
+alignments = NWScore(alphabet, substitution_matrix, seq1, seq2, [0, 0, 0])
+print(alignments)
+seq1_end_index = alignments[2]
+seq2_end_index = alignments[1]
 
-max_score_row = alignments[2][1]
-max_score_column = alignments[2][2]
-seq1_end_index = max_score_column - 1
-seq2_end_index = max_score_row - 1
-
-print(seq1_end_index, seq2_end_index)
 seq1_rev = seq1[::-1]
 seq2_rev = seq2[::-1]
-seq1_sliced = seq1_rev[0:seq1_end_index]
-seq2_sliced = seq2_rev[0:seq2_end_index]
+new_alignments = NWScore(alphabet, substitution_matrix, seq1_rev, seq2_rev, [0, 0, 0])
+print(new_alignments)
 
-new_alignments = dynproglin(alphabet, substitution_matrix, seq1_sliced, seq2_sliced)
-displayAlignment(new_alignments)
-start_score_row = alignments[2][1]
-start_score_column = alignments[2][2]
-print(start_score_row - 1, start_score_column - 1)
+start_score_row = new_alignments[1]
+start_score_column = new_alignments[2]
+seq1_start_index = len(seq1) - start_score_column
+seq2_start_index = len(seq2) - start_score_row
+print(seq1_start_index, seq2_start_index)
+print(seq1_end_index, seq2_end_index)
+print(seq1[seq1_start_index:seq1_end_index], seq2[seq2_start_index:seq2_end_index])
+
