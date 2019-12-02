@@ -21,7 +21,11 @@ def dynproglin(alphabet, substitution_matrix, seq1, seq2):
 
     # run Hirschberg global alignment on local sequences
     a = Hirschberg(alphabet, substitution_matrix, seq1_local, seq2_local)
-    return a
+    seq1_alignment = a[0]
+    seq2_alignment = a[1]
+
+    (seq1_indices, seq2_indices) = get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_index)
+    return int(score), seq1_indices, seq2_indices
 
 
 def Hirschberg(alphabet, substitution_matrix, seq1, seq2):
@@ -187,6 +191,24 @@ def backtrack(row, column, backtracking_matrix, seq1, seq2):
     seq2_alignment = seq2_alignment[::-1]
     return (seq1_alignment, seq2_alignment)
 
+def get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_index):
+    
+    seq1_indices = []
+    seq2_indices = []
+    seq1_gaps = 0
+    seq2_gaps = 0
+
+    for letter in range(0, len(seq1_alignment)):
+        if seq1_alignment[letter] == "-":
+            seq1_gaps += 1
+        elif seq2_alignment[letter] == "-":
+            seq2_gaps += 1
+        else:
+            seq1_indices.append(letter + seq1_start_index - seq1_gaps)
+            seq2_indices.append(letter + seq2_start_index - seq2_gaps)
+
+    return (seq1_indices, seq2_indices)
+
 def displayAlignment(alignment):
     string1 = alignment[0]
     string2 = alignment[1]
@@ -200,12 +222,22 @@ def displayAlignment(alignment):
     print('         ' + string3)
     print('String2: ' + string2 + '\n\n')
 
-alphabet = "AGCT"
-substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1, -2], [-1, -1, -1, 2, -2], [-1, -1, -1, -1, -2]]
-#substitution_matrix = [[1,-1,-2,-1],[-1,2,-4,-1],[-2,-4,3,-2],[-1,-1,-2,0]]
-#substitution_matrix = [[1, -1, -1, -1, 0], [-1, 1, -1, -1, 0], [-1, -1, 1, -1, 0], [-1, -1, -1, 1, 0], [-1, -1, -1, -1, 0]]
-seq1 = "TATGC"
-seq2 = "AGTACGCA"
+alphabet = "ABCD"
+substitution_matrix = [
+
+[ 1,-5,-5,-5,-1],
+
+[-5, 1,-5,-5,-1],
+
+[-5,-5, 5,-5,-4],
+
+[-5,-5,-5, 6,-4],
+
+[-1,-1,-4,-4,-9]]
+
+seq1 = "AAAAACCDDCCDDAAAAACC"
+seq2 = "CCAAADDAAAACCAAADDCCAAAA"
 
 alignments = dynproglin(alphabet, substitution_matrix, seq1, seq2)
-displayAlignment(alignments)
+print("Score:   ", alignments[0])
+print("Indices: ", alignments[1], alignments[2])
