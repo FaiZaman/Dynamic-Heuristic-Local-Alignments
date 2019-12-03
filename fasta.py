@@ -11,7 +11,8 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
   diagonal_seeds = get_seeds(ktup, index_table, seq2)
   
   # score the diagonals 
-  score_diagonals(ktup, cutoff_score, diagonal_seeds)
+  diagonal_score = score_diagonals(ktup, cutoff_score, diagonal_seeds)
+  print(diagonal_score)
 
 
 def get_index_table(ktup, seq1):
@@ -61,6 +62,7 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
   # loop through diagonals and find best score
   for diagonal in diagonal_seeds:
     for (seed_i, seed_j) in diagonal_seeds[diagonal]:
+      seeds = diagonal_seeds[diagonal]
       updated = True
 
       # get the score for matching the current seed
@@ -70,9 +72,19 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
         seq2_letter = seq2[seed_j + k]
         current_score += substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
 
+      # initialise max score and current and best endpoints of alignments
       max_score = current_score
-      max_score_index_1 = seed_i
-      max_score_index_2 = seed_j
+
+      seq1_current_start_index = seed_i
+      seq2_current_start_index = seed_j
+      seq1_current_end_index = seed_i + ktup
+      seq2_current_end_index = seed_j + ktup
+
+      seq1_best_start_index = seed_i
+      seq2_best_start_index = seed_j
+      seq1_best_end_index = seed_i + ktup
+      seq2_best_end_index = seed_j + ktup      
+      
       extending_left = True
 
       while updated:
@@ -80,13 +92,16 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 
         # extend left/right until score cutoff score and keep track of max score found
         if extending_left:
-          seed_i -= 1
-          seed_j -= 1
+          seq1_current_start_index -= 1
+          seq2_current_start_index -= 1
         else:
-          seed_i += 1
-          seed_j += 1
-        if seed_i < 0 or seed_j < 0 or seed_i > len(seq1) or seed_j > len(seq2):
+          seq1_current_end_index += 1
+          seq2_current_end_index += 1
+
+        if seq1_current_start_index < 0 or seq2_current_start_index < 0 or seq1_current_end_index > len(seq1) or seq2_current_end_index > len(seq2):
           break
+
+        # get score for a match
         seq1_letter = seq1[seed_i]
         seq2_letter = seq2[seed_j]
         current_score += substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
@@ -94,19 +109,40 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
         if current_score > max_score:
           updated = True
           max_score = current_score
-          max_score_index_1 = seed_i
-          max_score_index_2 = seed_j
-        elif current_score < cutoff_score:
+          if extending_left:
+            seq1_best_start_index = seq1_current_start_index
+            seq2_best_start_index = seq2_current_start_index
+          else:
+            seq1_best_end_index = seq1_current_end_index
+            seq2_best_end_index = seq2_current_end_index
+        elif current_score < cutoff_score:  # backtrack to indices for best score seen so far
+          if extending_left:
+            seq1_current_start_index = seq1_best_start_index
+            seq2_current_start_index = seq2_best_start_index
+          else:
+            seq1_current_end_index = seq1_best_end_index
+            seq2_current_end_index = seq2_best_end_index
           extending_left = not(extending_left)
-          seed_i = max_score_index_1
-          seed_j = max_score_index_2
-        print(max_score, max_score_index_1, max_score_index_2)
+          
+      # if seeds absorbed then remove them from the diagonal dictionary
+      for seed in range(0, len(seeds)):
+        if seeds[seed][0] != seed_i and seeds[seed][1] != seed_j:  # not current seeds
+          if seq1_best_start_index < seeds[seed][0] < seq1_best_end_index:
+            del diagonal_seeds[diagonal][seed]
+
+      diagonal_score[diagonal] = max(diagonal_score[diagonal], max_score)
+      return diagonal_score
 
   
 
-alphabet = "ACGT"
-substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1, -2], [-1, -1, -1, 2, -2], [-1, -1, -1, -1, -2]]
-seq1 = "TATGCTA"
-seq2 = "AGTACGCA"
+alphabet = "ABCD"
+#substitution_matrix = [[2, -1, -1, -1, -2], [-1, 2, -1, -1, -2], [-1, -1, 2, -1, -2], [-1, -1, -1, 2, -2], [-1, -1, -1, -1, -2]]
+substitution_matrix = [[1, -5, -5, -5, -1],
+                [-5, 1, -5, -5, -1],
+                [-5, -5, 5, -5, -4],
+                [-5, -5, -5, 6, -4],
+                [-1, -1, -4, -4, -9]]
+seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
+seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
 
 alignments = heuralign(alphabet, substitution_matrix, seq1, seq2)
