@@ -56,6 +56,7 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix):
 
 
 def get_indices(backtracking_matrix, row, column):
+    
     seq1_indices = []
     seq2_indices = []
     seq1_alignment = ""
