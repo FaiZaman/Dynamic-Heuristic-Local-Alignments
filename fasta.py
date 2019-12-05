@@ -1,18 +1,23 @@
 import numpy as np
+from heapq import nlargest
 
 def heuralign(alphabet, substitution_matrix, seq1, seq2):
 
 	# defining parameters
 	ktup = 2  # length of matches
 	cutoff_score = -3  # cutoff score when scoring diagonals
+	width = 2	 # width of band for banded DP
 	
 	# get the index table and seeds
 	index_table = get_index_table(ktup, seq1)
 	diagonal_seeds = get_seeds(ktup, index_table, seq2)
 
-	# score the diagonals 
-	diagonal_score = score_diagonals(ktup, cutoff_score, diagonal_seeds)
-	print(diagonal_score)
+	# score the diagonals
+	diagonal_score = score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_score, diagonal_seeds)
+
+	# get the best 3 diagonals and run banded DP on them
+	best_diagonals = nlargest(3, diagonal_score, key=diagonal_score.get)
+	banded_dp(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
 
 
 def get_index_table(ktup, seq1):
@@ -50,7 +55,7 @@ def get_seeds(ktup, index_table, seq2):
 	return seeds
 
 
-def score_diagonals(ktup, cutoff_score, diagonal_seeds):
+def score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_score, diagonal_seeds):
 
 	# initialise diagonal score dictionary
 	diagonal_score = {}
@@ -130,23 +135,6 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 
 				seq1_current_end_index = seq1_best_end_index
 				seq2_current_end_index = seq2_best_end_index
-
-				'''elif current_score < cutoff_score:  # backtrack to indices for best score seen so far
-					current_score = max_score
-					if extending_left:
-						seq1_current_start_index = seq1_best_start_index
-						seq2_current_start_index = seq2_best_start_index
-						extending_left = not(extending_left)
-						extended_left = True
-					else:
-						seq1_current_end_index = seq1_best_end_index
-						seq2_current_end_index = seq2_best_end_index
-						extending_left = not(extending_left)
-						extended_right = True
-					if not extended_left or not extended_right:
-						updated = True
-				else:
-					updated = True'''
 				
 		# if seeds absorbed then remove them from the diagonal dictionary
 		for (seed_k, seed_l) in diagonal_seeds[diagonal]:
@@ -158,7 +146,26 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 		diagonal_score[diagonal] = max(diagonal_score[diagonal], max_score)
 	return diagonal_score
 
-	
+def banded_dp(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
+
+	for diagonal in best_diagonals:
+
+		upper_diagonal = diagonal + width
+		lower_diagonal = diagonal - width
+		scoring_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
+		
+		# initialise rows and columns up to the band
+		for row in range(0, len(seq2) + 1):
+			if row < lower_diagonal:
+				scoring_matrix[row][0] = 0
+
+		for column in range(0, len(seq1) + 1):
+			if column < upper_diagonal:
+				scoring_matrix[0][column] = 0
+
+	print(scoring_matrix)
+
+
 
 alphabet = "ABCD"
 substitution_matrix = [[1, -5, -5, -5, -1],
