@@ -19,7 +19,7 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
 
 	# get the best 3 diagonals and run banded DP on them
 	best_diagonals = nlargest(3, diagonal_score, key=diagonal_score.get)
-	banded_dp(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
+	banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
 
 
 def get_index_table(ktup, seq1):
@@ -148,42 +148,34 @@ def score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_scor
 		diagonal_score[diagonal] = max(diagonal_score[diagonal], max_score)
 	return diagonal_score
 
-def banded_dp(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
+def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 
-	best_diagonals = [-5]
 	best_scores = []
 	for diagonal in best_diagonals:
 		
+		# initialise max score data and got band values
 		max_score, max_score_row, max_score_column = 0, -1, -1
-
+		diagonal *= -1
 		upper_diagonal = diagonal + width
 		lower_diagonal = diagonal - width
 		
-		print(lower_diagonal, upper_diagonal)
-		scoring_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
-		backtracking_matrix = np.zeros((len(seq2) + 1, len(seq1) + 1))
+		# initialise matrices using np.empty therefore being subquadratic time
+		scoring_matrix = np.empty((len(seq2) + 1, len(seq1) + 1))
+		backtracking_matrix = np.empty((len(seq2) + 1, len(seq1) + 1))
 		
-		# initialise rows and columns up to the band
-		for row in range(0, len(seq2) + 1):
-			if lower_diagonal <= row <= upper_diagonal:
-				scoring_matrix[row][0] = 1
-			else:
-				break
-
-		for column in range(0, len(seq1) + 1):
-			if lower_diagonal <= column <= upper_diagonal:
-				scoring_matrix[0][column] = 1
-			else:
-				break
+		# initialise first row and column
+		scoring_matrix[0] = 0
+		scoring_matrix[:,0] = 0
 
 		# run local alignment on the cells in the band
 		for row in range(1, len(seq2) + 1):
-			for column in range(1, len(seq1) + 1):
-				# if out of bounds, skip to next row and column
+			for column in range(max(row - upper_diagonal, 1), min(row - lower_diagonal, len(seq1)) + 1):
 
+				# get the score and where it comes from
 				score_data = calculate_score_data(row, column, alphabet, substitution_matrix, scoring_matrix, seq1, seq2)
 				score, score_origin = score_data[0], score_data[1]
 
+				# replace max score data if greater
 				if score > max_score:
 					max_score = score
 					max_score_row = row
