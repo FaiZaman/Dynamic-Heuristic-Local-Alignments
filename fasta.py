@@ -8,7 +8,7 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
 	# defining parameters
 	ktup = 2  # length of matches
 	cutoff_score = -3  # cutoff score when scoring diagonals
-	width = 2	 # width of band for banded DP
+	width = 30	 # width of band for banded DP
 	
 	# get the index table and seeds
 	index_table = get_index_table(ktup, seq1)
@@ -148,6 +148,7 @@ def score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_scor
 		diagonal_score[diagonal] = max(diagonal_score[diagonal], max_score)
 	return diagonal_score
 
+
 def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 
 	best_scores = []
@@ -169,10 +170,12 @@ def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 
 		# run local alignment on the cells in the band
 		for row in range(1, len(seq2) + 1):
-			for column in range(max(row - upper_diagonal, 1), min(row - lower_diagonal, len(seq1)) + 1):
+			lower_band = max(row - upper_diagonal, 1)
+			upper_band = min(row - lower_diagonal, len(seq1)) + 1
+			for column in range(lower_band, upper_band):
 
 				# get the score and where it comes from
-				score_data = calculate_score_data(row, column, alphabet, substitution_matrix, scoring_matrix, seq1, seq2)
+				score_data = calculate_score_data(row, column, lower_band, upper_band, alphabet, substitution_matrix, scoring_matrix, seq1, seq2)
 				score, score_origin = score_data[0], score_data[1]
 
 				# replace max score data if greater
@@ -186,34 +189,42 @@ def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 
 		best_scores.append(max_score)
 
-	print(scoring_matrix)
+	print(best_scores)
 
 
-def calculate_score_data(row, column, alphabet, substitution_matrix, scoring_matrix, seq1, seq2):
+def calculate_score_data(row, column, lower_band, upper_band, alphabet, substitution_matrix, scoring_matrix, seq1, seq2):
 
 	# calculate and return the best score and its origin for the current scoring matrix cell
-    seq1_letter = seq1[column - 1]
-    seq2_letter = seq2[row - 1]
+	seq1_letter = seq1[column - 1]
+	seq2_letter = seq2[row - 1]
 
-    match_score = substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
-
-    diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
-    left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1_letter)][-1]
-    up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2_letter)][-1]
+	match_score = substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
+	
+	diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
+	
+	if lower_band <= column - 1 <= upper_band:
+		left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1_letter)][-1]
+	else:
+		left_score = -1
+	
+	if lower_band <= row - 1 <= upper_band:
+		up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2_letter)][-1]
+	else:
+		up_score = -1
     
 	# check if the max score is out of bounds
-    score = max(diagonal_score, up_score, left_score, 0)
-    score_origin = 0
+	score = max(diagonal_score, up_score, left_score, 0)
+	score_origin = 0
 
-    # 8 = DIAGONAL, 2 = UP, 4 = LEFT
-    if score == diagonal_score:
-        score_origin = 8
-    elif score == up_score:
-        score_origin = 2
-    else:
-        score_origin = 4
+	# 8 = DIAGONAL, 2 = UP, 4 = LEFT
+	if score == diagonal_score:
+	    score_origin = 8
+	elif score == up_score:
+	    score_origin = 2
+	else:
+	    score_origin = 4
 
-    return (score, score_origin)
+	return (score, score_origin)
 
 
 def get_indices(backtracking_matrix, row, column):
@@ -271,7 +282,7 @@ substitution_matrix = [[1, -5, -5, -5, -1],
 					   [-5, -5, 5, -5, -4],
 					   [-5, -5, -5, 6, -4],
 					   [-1, -1, -4, -4, -9]]
-seq1 = "DDCDDCCCDCAA"
-seq2 = "DDCDDCCCDCBC"
+seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
+seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
 
 alignments = heuralign(alphabet, substitution_matrix, seq1, seq2)
