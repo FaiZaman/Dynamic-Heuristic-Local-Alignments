@@ -4,12 +4,12 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
 
 	# defining parameters
 	ktup = 2  # length of matches
-	cutoff_score = 0  # cutoff score when scoring diagonals
+	cutoff_score = -3  # cutoff score when scoring diagonals
 	
 	# get the index table and seeds
 	index_table = get_index_table(ktup, seq1)
 	diagonal_seeds = get_seeds(ktup, index_table, seq2)
-	
+
 	# score the diagonals 
 	diagonal_score = score_diagonals(ktup, cutoff_score, diagonal_seeds)
 	print(diagonal_score)
@@ -42,10 +42,10 @@ def get_seeds(ktup, index_table, seq2):
 		if match in index_table:
 			for seq1_position in index_table[match]:
 				diagonal = seq1_position - letter_index
-			if diagonal in seeds:
-				seeds[diagonal].append((seq1_position, letter_index))
-			else:
-				seeds[diagonal] = [(seq1_position, letter_index)]
+				if diagonal in seeds:
+					seeds[diagonal].append((seq1_position, letter_index))
+				else:
+					seeds[diagonal] = [(seq1_position, letter_index)]
 
 	return seeds
 
@@ -62,7 +62,6 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 	# loop through diagonals and find best score
 	for diagonal in diagonal_seeds:
 		for (seed_i, seed_j) in diagonal_seeds[diagonal]:
-			seeds = diagonal_seeds[diagonal]
 			updated = True
 
 			# get the score for matching the current seed
@@ -125,11 +124,11 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 						extending_left = not(extending_left)
 				
 		# if seeds absorbed then remove them from the diagonal dictionary
-		for seed in range(0, len(diagonal_seeds[diagonal]) - 1):
-			seeds = diagonal_seeds[diagonal]
-			if seeds[seed][0] != seed_i and seeds[seed][1] != seed_j:  # not current seeds
-				if seq1_best_start_index < seeds[seed][0] < seq1_best_end_index:
-					del diagonal_seeds[diagonal][seed]
+		for (seed_k, seed_l) in diagonal_seeds[diagonal]:
+			index = diagonal_seeds[diagonal].index((seed_k, seed_l))
+			if seed_k != seed_i and seed_l != seed_j:  # not current seeds
+				if seq1_best_start_index < seed_k < seq1_best_end_index:
+					del diagonal_seeds[diagonal][index]
 
 		diagonal_score[diagonal] = max(diagonal_score[diagonal], max_score)
 	return diagonal_score
@@ -138,10 +137,10 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 
 alphabet = "ABCD"
 substitution_matrix = [[1, -5, -5, -5, -1],
-				[-5, 1, -5, -5, -1],
-				[-5, -5, 5, -5, -4],
-				[-5, -5, -5, 6, -4],
-				[-1, -1, -4, -4, -9]]
+					   [-5, 1, -5, -5, -1],
+					   [-5, -5, 5, -5, -4],
+					   [-5, -5, -5, 6, -4],
+					   [-1, -1, -4, -4, -9]]
 seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
 seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
 
