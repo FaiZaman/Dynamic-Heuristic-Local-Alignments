@@ -57,7 +57,8 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 
 	# initalise diagonal entries
 	for diagonal in diagonal_seeds:
-		diagonal_score[diagonal] = 0
+		if len(diagonal_seeds[diagonal]) > 2:
+			diagonal_score[diagonal] = 0
 
 	# loop through diagonals and find best score
 	for diagonal in diagonal_seeds:
@@ -93,16 +94,19 @@ def score_diagonals(ktup, cutoff_score, diagonal_seeds):
 				if extending_left:
 					seq1_current_start_index -= 1
 					seq2_current_start_index -= 1
+					if seq1_current_start_index < 0 or seq2_current_start_index < 0 or seq1_current_end_index > len(seq1) or seq2_current_end_index > len(seq2):
+						break
+					seq1_letter = seq1[seq1_current_start_index]
+					seq2_letter = seq2[seq2_current_start_index]
 				else:
 					seq1_current_end_index += 1
 					seq2_current_end_index += 1
-
-				if seq1_current_start_index < 0 or seq2_current_start_index < 0 or seq1_current_end_index > len(seq1) or seq2_current_end_index > len(seq2):
-					break
+					if seq1_current_start_index < 0 or seq2_current_start_index < 0 or seq1_current_end_index > len(seq1) or seq2_current_end_index > len(seq2):
+						break
+					seq1_letter = seq1[seq1_current_end_index]
+					seq2_letter = seq2[seq2_current_end_index]
 
 				# get score for a match
-				seq1_letter = seq1[seed_i]
-				seq2_letter = seq2[seed_j]
 				current_score += substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
 
 				if current_score > max_score:
