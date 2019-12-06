@@ -1,26 +1,25 @@
 import numpy as np
-import sys
 from heapq import nlargest
-np.set_printoptions(threshold=sys.maxsize)
 
 def heuralign(alphabet, substitution_matrix, seq1, seq2):
 
 	# defining parameters
 	ktup = 2  # length of matches
 	cutoff_score = -3  # cutoff score when scoring diagonals
-	width = 30	 # width of band for banded DP
+	width = 15	 # width of band for banded DP
+	n = 3	# number of diagonals to run banded DP on
 	
 	# get the index table and seeds
 	index_table = get_index_table(ktup, seq1)
 	diagonal_seeds = get_seeds(ktup, index_table, seq2)
-
+	
 	# score the diagonals
 	diagonal_score = score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_score, diagonal_seeds)
 
-	# get the best 3 diagonals and run banded DP on them
-	best_diagonals = nlargest(3, diagonal_score, key=diagonal_score.get)
-	banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
-
+	# get the n best diagonals and run banded DP on them
+	best_diagonals = nlargest(n, diagonal_score, key=diagonal_score.get)
+	indices = banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
+	return (int(indices[0]), indices[1], indices[2])
 
 def get_index_table(ktup, seq1):
 
@@ -151,10 +150,15 @@ def score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_scor
 
 def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 
-	best_scores = []
+	# initialise overall max score data
+	diagonal_max_score = 0
+	diagonal_max_score_row = -1
+	diagonal_max_score_column = -1
+	diagonal_backtracking_matrix = np.empty((len(seq2) + 1, len(seq1) + 1))
+
 	for diagonal in best_diagonals:
 		
-		# initialise max score data and got band values
+		# initialise loop max score data and got band values
 		max_score, max_score_row, max_score_column = 0, -1, -1
 		diagonal *= -1
 		upper_diagonal = diagonal + width
@@ -183,13 +187,19 @@ def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 					max_score = score
 					max_score_row = row
 					max_score_column = column
+					diagonal_backtracking_matrix = backtracking_matrix
 
 				scoring_matrix[row][column] = score
 				backtracking_matrix[row][column] = score_origin
 
-		best_scores.append(max_score)
+		# replace overall max score data if greater
+		if max_score > diagonal_max_score:
+			diagonal_max_score = max_score
+			diagonal_max_score_row = max_score_row
+			diagonal_max_score_column = max_score_column
 
-	print(best_scores)
+	indices = get_indices(diagonal_backtracking_matrix, diagonal_max_score_row, diagonal_max_score_column)
+	return (diagonal_max_score, indices[0], indices[1])
 
 
 def calculate_score_data(row, column, lower_band, upper_band, alphabet, substitution_matrix, scoring_matrix, seq1, seq2):
@@ -282,7 +292,7 @@ substitution_matrix = [[1, -5, -5, -5, -1],
 					   [-5, -5, 5, -5, -4],
 					   [-5, -5, -5, 6, -4],
 					   [-1, -1, -4, -4, -9]]
-seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
-seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
+seq1 = "AAAAACCDDCCDDAAAAACC"
+seq2 = "CCAAADDAAAACCAAADDCCAAAA"
 
 alignments = heuralign(alphabet, substitution_matrix, seq1, seq2)

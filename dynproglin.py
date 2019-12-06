@@ -209,6 +209,7 @@ def get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_ind
 
     return (seq1_indices, seq2_indices)
 
+
 def displayAlignment(alignment):
     string1 = alignment[0]
     string2 = alignment[1]
@@ -221,6 +222,7 @@ def displayAlignment(alignment):
     print('String1: ' + string1)
     print('         ' + string3)
     print('String2: ' + string2 + '\n\n')
+
 
 alphabet = "ABCD"
 substitution_matrix = [

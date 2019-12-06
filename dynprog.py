@@ -26,7 +26,7 @@ def dynprog(alphabet, substitution_matrix, seq1, seq2):
             backtracking_matrix[row][column] = score_origin
     
     indices = get_indices(backtracking_matrix, max_score_row, max_score_column)
-    return (max_score, indices[0], indices[1])
+    return (int(max_score), indices[0], indices[1])
 
 
 def calculate_score_data(row, column, substitution_matrix, scoring_matrix):
