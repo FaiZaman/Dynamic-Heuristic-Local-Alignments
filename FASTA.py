@@ -12,6 +12,11 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
 	# get the index table and seeds
 	index_table = get_index_table(ktup, seq1)
 	diagonal_seeds = get_seeds(ktup, index_table, seq2)
+	if diagonal_seeds == {}:
+		# no seeds so run banded DP on i - j = 0
+		best_diagonals = [0]
+		indices = banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width)
+		return (int(indices[0]), indices[1], indices[2])
 	
 	# score the diagonals
 	diagonal_score = score_diagonals(alphabet, substitution_matrix, seq1, seq2, ktup, cutoff_score, diagonal_seeds)
@@ -292,8 +297,8 @@ substitution_matrix = [[1, -5, -5, -5, -1],
 					   [-5, -5, 5, -5, -4],
 					   [-5, -5, -5, 6, -4],
 					   [-1, -1, -4, -4, -9]]
-seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
-seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
+seq1 = "AACAAADAAAACAADAADAAA"
+seq2 = "CDCDDD"
 
 alignments = heuralign(alphabet, substitution_matrix, seq1, seq2)
 print("Score:   ", alignments[0])
