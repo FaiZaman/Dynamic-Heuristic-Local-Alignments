@@ -6,7 +6,7 @@ def heuralign(alphabet, substitution_matrix, seq1, seq2):
 	# defining parameters
 	ktup = 2  # length of matches
 	cutoff_score = -3  # cutoff score when scoring diagonals
-	width = 15	 # width of band for banded DP
+	width = 29	 # width of band for banded DP
 	n = 3	# number of diagonals to run banded DP on
 	
 	# get the index table and seeds
@@ -187,7 +187,6 @@ def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 					max_score = score
 					max_score_row = row
 					max_score_column = column
-					diagonal_backtracking_matrix = backtracking_matrix
 
 				scoring_matrix[row][column] = score
 				backtracking_matrix[row][column] = score_origin
@@ -197,6 +196,7 @@ def banded_DP(alphabet, substitution_matrix, seq1, seq2, best_diagonals, width):
 			diagonal_max_score = max_score
 			diagonal_max_score_row = max_score_row
 			diagonal_max_score_column = max_score_column
+			diagonal_backtracking_matrix = backtracking_matrix
 
 	indices = get_indices(diagonal_backtracking_matrix, diagonal_max_score_row, diagonal_max_score_column)
 	return (diagonal_max_score, indices[0], indices[1])
@@ -292,7 +292,9 @@ substitution_matrix = [[1, -5, -5, -5, -1],
 					   [-5, -5, 5, -5, -4],
 					   [-5, -5, -5, 6, -4],
 					   [-1, -1, -4, -4, -9]]
-seq1 = "AAAAACCDDCCDDAAAAACC"
-seq2 = "CCAAADDAAAACCAAADDCCAAAA"
+seq1 = "DDCDDCCCDCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCDDDCDADCDCDCDCD"
+seq2 = "DDCDDCCCDCBCCCCDDDCDBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBDCDCDCDCD"
 
 alignments = heuralign(alphabet, substitution_matrix, seq1, seq2)
+print("Score:   ", alignments[0])
+print("Indices: ", alignments[1], alignments[2])
