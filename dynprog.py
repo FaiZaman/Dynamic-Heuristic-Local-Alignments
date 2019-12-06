@@ -26,20 +26,20 @@ def dynprog(alphabet, substitution_matrix, seq1, seq2):
             backtracking_matrix[row][column] = score_origin
     
     indices = get_indices(backtracking_matrix, max_score_row, max_score_column)
-    return (max_score, indices[0], indices[1])
+    return (int(max_score), indices[0], indices[1])
 
 
 def calculate_score_data(row, column, substitution_matrix, scoring_matrix):
 
     # calculate and return the best score and its origin for the current scoring matrix cell
-    seq1letter = seq1[column - 1]
-    seq2letter = seq2[row - 1]
+    seq1_letter = seq1[column - 1]
+    seq2_letter = seq2[row - 1]
 
-    match_score = substitution_matrix[alphabet.index(seq1letter)][alphabet.index(seq2letter)]
+    match_score = substitution_matrix[alphabet.index(seq1_letter)][alphabet.index(seq2_letter)]
 
     diagonal_score = scoring_matrix[row - 1][column - 1] + match_score
-    left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1letter)][-1]
-    up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2letter)][-1]
+    left_score = scoring_matrix[row][column - 1] + substitution_matrix[alphabet.index(seq1_letter)][-1]
+    up_score = scoring_matrix[row - 1][column] + substitution_matrix[alphabet.index(seq2_letter)][-1]
     
     score = max(diagonal_score, up_score, left_score, 0)
     score_origin = 0
@@ -56,6 +56,7 @@ def calculate_score_data(row, column, substitution_matrix, scoring_matrix):
 
 
 def get_indices(backtracking_matrix, row, column):
+    
     seq1_indices = []
     seq2_indices = []
     seq1_alignment = ""

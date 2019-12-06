@@ -3,26 +3,26 @@ import numpy as np
 def dynproglin(alphabet, substitution_matrix, seq1, seq2):
     
     # get score and end indices of local alignment
-    alignments = NWLocalScore(alphabet, substitution_matrix, seq1, seq2)
-    score = alignments[0]
-    seq1_end_index = alignments[2]
-    seq2_end_index = alignments[1]
+    end_score_data = NWLocalScore(alphabet, substitution_matrix, seq1, seq2)
+    score = end_score_data[0]
+    seq1_end_index = end_score_data[2]
+    seq2_end_index = end_score_data[1]
 
     # reverse sequences and run again
     seq1_rev = seq1[::-1]
     seq2_rev = seq2[::-1]
-    new_alignments = NWLocalScore(alphabet, substitution_matrix, seq1_rev, seq2_rev)
+    start_score_data = NWLocalScore(alphabet, substitution_matrix, seq1_rev, seq2_rev)
 
     # get start indices and build local sequences
-    seq1_start_index = len(seq1) - new_alignments[2]
-    seq2_start_index = len(seq2) - new_alignments[1]
+    seq1_start_index = len(seq1) - start_score_data[2]
+    seq2_start_index = len(seq2) - start_score_data[1]
     seq1_local = seq1[seq1_start_index:seq1_end_index]
     seq2_local = seq2[seq2_start_index:seq2_end_index]
 
     # run Hirschberg global alignment on local sequences
-    a = Hirschberg(alphabet, substitution_matrix, seq1_local, seq2_local)
-    seq1_alignment = a[0]
-    seq2_alignment = a[1]
+    alignments = Hirschberg(alphabet, substitution_matrix, seq1_local, seq2_local)
+    seq1_alignment = alignments[0]
+    seq2_alignment = alignments[1]
 
     (seq1_indices, seq2_indices) = get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_index)
     return int(score), seq1_indices, seq2_indices
@@ -209,6 +209,7 @@ def get_indices(seq1_alignment, seq2_alignment, seq1_start_index, seq2_start_ind
 
     return (seq1_indices, seq2_indices)
 
+
 def displayAlignment(alignment):
     string1 = alignment[0]
     string2 = alignment[1]
@@ -221,6 +222,7 @@ def displayAlignment(alignment):
     print('String1: ' + string1)
     print('         ' + string3)
     print('String2: ' + string2 + '\n\n')
+
 
 alphabet = "ABCD"
 substitution_matrix = [
